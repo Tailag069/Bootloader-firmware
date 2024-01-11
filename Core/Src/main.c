@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "string.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -33,6 +33,7 @@ typedef void (*pFunction)(void);
 /* USER CODE BEGIN PD */
 #define ADDRESS_1 0x08020000
 #define ADDRESS_2 0x08040000
+#define ADDRESS_3 0x08060000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -44,6 +45,7 @@ typedef void (*pFunction)(void);
  UART_HandleTypeDef huart4;
 
 /* USER CODE BEGIN PV */
+uint8_t Mode[] = "Dang o trong bootloader";
 uint8_t FWSelection;
 uint32_t FW;
 /* USER CODE END PV */
@@ -91,7 +93,7 @@ int main(void)
   MX_GPIO_Init();
   MX_UART4_Init();
   /* USER CODE BEGIN 2 */
-
+  HAL_UART_Transmit(&huart4, &Mode, strlen(Mode), 300);
 //  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)== GPIO_PIN_RESET){
 //  /* Turn off Peripheral, Clear Interrupt Flag*/
 //
@@ -205,9 +207,23 @@ int main(void)
 			       SCB_SHCSR_BUSFAULTENA_Msk | \
 			       SCB_SHCSR_MEMFAULTENA_Msk ) ;
 
-
-			  pFunction app_reset_handler = (pFunction)(*(__IO uint32_t*)(ADDRESS_2 + 4));
 			  __set_MSP(*(__IO uint32_t*)ADDRESS_2);
+			  pFunction app_reset_handler = (pFunction)(*(__IO uint32_t*)(ADDRESS_2 + 4));
+			  app_reset_handler();
+		  }
+		  if(FWSelection == '3'){
+			  /* Turn off Peripheral, Clear Interrupt Flag*/
+
+			     HAL_RCC_DeInit();
+
+			     /* Clear Pending Interrupt Request, turn  off System Tick*/
+			     HAL_DeInit();
+			  SCB->SHCSR &= ~( SCB_SHCSR_USGFAULTENA_Msk |\
+			       SCB_SHCSR_BUSFAULTENA_Msk | \
+			       SCB_SHCSR_MEMFAULTENA_Msk ) ;
+
+			  __set_MSP(*(__IO uint32_t*)ADDRESS_3);
+			  pFunction app_reset_handler = (pFunction)(*(__IO uint32_t*)(ADDRESS_3 + 4));
 			  app_reset_handler();
 		  }
 	  }
